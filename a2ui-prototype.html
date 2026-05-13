@@ -66,11 +66,14 @@ body {
   display:flex; align-items:center; gap:12px;
 }
 .header-logo {
-  width:36px; height:36px;
+  width:38px; height:38px;
   border-radius:10px;
   background:linear-gradient(135deg, var(--neon-cyan), var(--neon-blue));
   display:flex; align-items:center; justify-content:center;
-  font-size:18px; color:#000; font-weight:700;
+  flex-shrink:0;
+}
+.header-logo svg {
+  width:22px; height:22px;
 }
 .header-title {
   font-size:15px; font-weight:600; color:var(--text-primary);
@@ -255,13 +258,30 @@ body {
   animation: pulse-dot 3s ease-in-out infinite;
 }
 .query-text {
-  font-size:14px; color:var(--text-primary);
+  font-size:30px; font-weight:800;
+  background: linear-gradient(90deg, #00e5ff 0%, #82b1ff 30%, #ea80fc 70%, #00e5ff 100%);
+  background-size:200% auto;
+  -webkit-background-clip:text; -webkit-text-fill-color:transparent;
+  background-clip:text;
   white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
-  min-height:20px;
+  min-height:28px;
+  letter-spacing:0.5px;
+  text-shadow: 0 0 0 transparent;
+  animation: textShimmer 4s linear infinite;
+  filter: drop-shadow(0 0 12px rgba(0,229,255,0.25));
+}
+@keyframes textShimmer {
+  0% { background-position:0% center; }
+  100% { background-position:200% center; }
 }
 .query-text.placeholder {
+  background: transparent;
+  -webkit-text-fill-color:var(--text-muted);
   color:var(--text-muted);
+  font-weight:400;
   font-style:italic;
+  filter: none;
+  animation: none;
 }
 
 .voice-btn {
@@ -329,7 +349,7 @@ body {
 
   <div class="header">
     <div class="header-brand">
-      <div class="header-logo">⚡</div>
+      <div class="header-logo"><svg viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="10" stroke="#000" stroke-width="1.8" opacity="0.8"/><circle cx="12" cy="12" r="5" stroke="#000" stroke-width="1.2" stroke-dasharray="2.5 1.5" opacity="0.6"/><circle cx="12" cy="12" r="1.8" fill="#000"/><line x1="12" y1="2" x2="12" y2="6" stroke="#000" stroke-width="2" stroke-linecap="round"/><line x1="12" y1="18" x2="12" y2="22" stroke="#000" stroke-width="2" stroke-linecap="round"/><line x1="2" y1="12" x2="6" y2="12" stroke="#000" stroke-width="2" stroke-linecap="round"/><line x1="18" y1="12" x2="22" y2="12" stroke="#000" stroke-width="2" stroke-linecap="round"/><path d="M7 7l3.5 3.5" stroke="#000" stroke-width="1.2" stroke-linecap="round" opacity="0.5"/><path d="M13.5 13.5l3.5 3.5" stroke="#000" stroke-width="1.2" stroke-linecap="round" opacity="0.5"/></svg></div>
       <div>
         <div class="header-title">A2UI Vision Generator</div>
         <div class="header-subtitle">GenAI HMI · Decision Engine</div>
