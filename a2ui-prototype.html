@@ -1,0 +1,722 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>A2UI Vision Generator — HMI Prototype</title>
+<style>
+:root {
+  --bg-deep: #0a0c12;
+  --bg-panel: #11161f;
+  --bg-card: rgba(18, 24, 38, 0.75);
+  --glass-border: rgba(255,255,255,0.08);
+  --glass-border-hover: rgba(255,255,255,0.15);
+  --neon-cyan: #00e5ff;
+  --neon-blue: #448aff;
+  --tag-green-bg: rgba(0,200,120,0.15);
+  --tag-green-border: rgba(0,200,120,0.4);
+  --tag-green-text: #00e676;
+  --tag-red-bg: rgba(255,60,60,0.15);
+  --tag-red-border: rgba(255,60,60,0.4);
+  --tag-red-text: #ff5252;
+  --star-gold: #ffc107;
+  --text-primary: #e8eaed;
+  --text-secondary: #9aa0a6;
+  --text-muted: #5f6368;
+}
+
+* { margin:0; padding:0; box-sizing:border-box; }
+
+body {
+  background: radial-gradient(ellipse at 50% 30%, #141c2b 0%, #0a0d14 60%, #05070a 100%);
+  min-height:100vh;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  font-family: 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+  overflow:hidden;
+  user-select:none;
+}
+
+.ambient-glow-top {
+  position:fixed; top:-200px; left:50%; transform:translateX(-50%);
+  width:900px; height:400px;
+  background:radial-gradient(ellipse, rgba(0,180,255,0.08) 0%, transparent 70%);
+  pointer-events:none; z-index:0;
+}
+.ambient-glow-bottom {
+  position:fixed; bottom:-150px; left:50%; transform:translateX(-50%);
+  width:800px; height:300px;
+  background:radial-gradient(ellipse, rgba(0,229,255,0.06) 0%, transparent 70%);
+  pointer-events:none; z-index:0;
+}
+
+.dashboard {
+  position:relative; z-index:1;
+  width:min(1280px, 96vw);
+  display:flex; flex-direction:column; gap:24px;
+}
+
+.header {
+  display:flex; align-items:center; justify-content:space-between;
+  padding:0 8px;
+}
+
+.header-brand {
+  display:flex; align-items:center; gap:12px;
+}
+.header-logo {
+  width:36px; height:36px;
+  border-radius:10px;
+  background:linear-gradient(135deg, var(--neon-cyan), var(--neon-blue));
+  display:flex; align-items:center; justify-content:center;
+  font-size:18px; color:#000; font-weight:700;
+}
+.header-title {
+  font-size:15px; font-weight:600; color:var(--text-primary);
+  letter-spacing:1px;
+}
+.header-subtitle {
+  font-size:11px; color:var(--text-muted);
+  letter-spacing:2px; text-transform:uppercase;
+}
+
+.status-indicator {
+  display:flex; align-items:center; gap:8px;
+  font-size:12px; color:var(--text-secondary);
+}
+.status-dot {
+  width:8px; height:8px; border-radius:50%;
+  background:var(--neon-cyan);
+  box-shadow: 0 0 8px var(--neon-cyan), 0 0 16px rgba(0,229,255,0.4);
+  animation: pulse-dot 2s ease-in-out infinite;
+}
+@keyframes pulse-dot {
+  0%,100% { opacity:1; }
+  50% { opacity:0.4; }
+}
+
+.screen-frame {
+  position:relative;
+  background: linear-gradient(160deg, #1a1f2e 0%, #0f131c 100%);
+  border-radius:24px;
+  border:1px solid rgba(255,255,255,0.08);
+  padding:4px;
+  box-shadow:
+    0 0 40px rgba(0,150,255,0.06),
+    inset 0 1px 0 rgba(255,255,255,0.03),
+    0 20px 60px rgba(0,0,0,0.5);
+}
+
+.screen-frame::before {
+  content:'';
+  position:absolute; inset:0; border-radius:24px;
+  background:linear-gradient(180deg, rgba(255,255,255,0.02) 0%, transparent 40%);
+  pointer-events:none; z-index:2;
+}
+
+.screen-content {
+  position:relative; z-index:1;
+  background:var(--bg-panel);
+  border-radius:20px;
+  padding:28px 28px 24px;
+  min-height:420px;
+}
+
+.screen-top-bar {
+  display:flex; align-items:center; justify-content:space-between;
+  margin-bottom:22px;
+}
+.screen-title {
+  font-size:14px; font-weight:600; color:var(--text-primary);
+  letter-spacing:0.5px;
+}
+.screen-meta {
+  display:flex; gap:16px;
+  font-size:11px; color:var(--text-muted);
+}
+.screen-meta span { display:flex; align-items:center; gap:4px; }
+
+.cards-grid {
+  display:grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap:18px;
+}
+
+.card {
+  background:var(--bg-card);
+  backdrop-filter:blur(16px);
+  -webkit-backdrop-filter:blur(16px);
+  border-radius:16px;
+  border:1px solid var(--glass-border);
+  overflow:hidden;
+  transition: all 0.4s cubic-bezier(0.25, 0.1, 0.25, 1);
+  position:relative;
+}
+.card::after {
+  content:'';
+  position:absolute; inset:0; border-radius:16px;
+  background:linear-gradient(180deg, rgba(255,255,255,0.03) 0%, transparent 50%);
+  pointer-events:none;
+}
+.card:hover {
+  border-color:var(--glass-border-hover);
+  transform:translateY(-3px);
+  box-shadow: 0 12px 40px rgba(0,0,0,0.4);
+}
+
+.card-image {
+  width:100%; height:130px;
+  position:relative; overflow:hidden;
+}
+.card-image-placeholder {
+  width:100%; height:100%;
+  display:flex; align-items:center; justify-content:center;
+  font-size:48px;
+  position:relative;
+}
+.card-image-bg {
+  position:absolute; inset:0;
+  opacity:0.7;
+}
+.card-image-overlay {
+  position:absolute; bottom:0; left:0; right:0; height:50%;
+  background:linear-gradient(transparent, rgba(0,0,0,0.6));
+}
+
+.card-body {
+  padding:14px 16px 16px;
+}
+
+.card-name {
+  font-size:16px; font-weight:600; color:var(--text-primary);
+  margin-bottom:8px; letter-spacing:0.5px;
+}
+
+.card-rating-row {
+  display:flex; align-items:center; justify-content:space-between;
+  margin-bottom:10px;
+}
+.card-stars {
+  display:flex; gap:2px;
+}
+.star { color:var(--star-gold); font-size:13px; }
+.star-empty { color:var(--text-muted); opacity:0.4; font-size:13px; }
+.card-price {
+  font-size:12px; color:var(--text-secondary);
+  background:rgba(255,255,255,0.05);
+  padding:3px 10px; border-radius:20px;
+  border:0.5px solid rgba(255,255,255,0.1);
+}
+
+.card-tags { display:flex; flex-direction:column; gap:6px; }
+
+.tag-row {
+  display:flex; flex-wrap:wrap; gap:5px;
+}
+.tag {
+  font-size:11px; padding:3px 10px;
+  border-radius:20px;
+  font-weight:500;
+  letter-spacing:0.3px;
+  transition: all 0.2s;
+}
+.tag-pro {
+  background:var(--tag-green-bg);
+  border:0.5px solid var(--tag-green-border);
+  color:var(--tag-green-text);
+}
+.tag-con {
+  background:var(--tag-red-bg);
+  border:0.5px solid var(--tag-red-border);
+  color:var(--tag-red-text);
+}
+.tag-label {
+  font-size:9px; text-transform:uppercase; letter-spacing:1px;
+  opacity:0.6; margin-bottom:1px;
+}
+
+.control-bar {
+  display:flex; align-items:center; gap:14px;
+  background: var(--bg-panel);
+  border-radius:16px;
+  padding:12px 18px;
+  border:1px solid var(--glass-border);
+}
+
+.query-display {
+  flex:1;
+  display:flex; align-items:center; gap:10px;
+  min-width:0;
+}
+.query-icon {
+  font-size:18px; flex-shrink:0;
+  color:var(--neon-cyan);
+  animation: pulse-dot 3s ease-in-out infinite;
+}
+.query-text {
+  font-size:14px; color:var(--text-primary);
+  white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+  min-height:20px;
+}
+.query-text.placeholder {
+  color:var(--text-muted);
+  font-style:italic;
+}
+
+.voice-btn {
+  display:flex; align-items:center; gap:8px;
+  padding:10px 22px;
+  border-radius:28px;
+  border:1px solid var(--neon-cyan);
+  background:rgba(0,229,255,0.08);
+  color:var(--neon-cyan);
+  font-size:13px; font-weight:600;
+  cursor:pointer;
+  letter-spacing:0.5px;
+  transition: all 0.3s;
+  white-space:nowrap;
+  flex-shrink:0;
+}
+.voice-btn:hover {
+  background:rgba(0,229,255,0.18);
+  box-shadow: 0 0 20px rgba(0,229,255,0.2);
+  transform:scale(1.03);
+}
+.voice-btn:active {
+  transform:scale(0.97);
+  transition:transform 0.1s;
+}
+.voice-btn-icon {
+  font-size:16px;
+}
+
+.card-enter {
+  animation: cardSlideIn 0.5s cubic-bezier(0.25, 0.1, 0.25, 1) forwards;
+}
+@keyframes cardSlideIn {
+  from { opacity:0; transform:translateY(16px) scale(0.96); }
+  to { opacity:1; transform:translateY(0) scale(1); }
+}
+.card:nth-child(1) { animation-delay:0s; }
+.card:nth-child(2) { animation-delay:0.08s; }
+.card:nth-child(3) { animation-delay:0.16s; }
+
+.query-flash { animation:queryFlash 0.6s ease-out; }
+@keyframes queryFlash {
+  0% { color:var(--neon-cyan); }
+  100% { color:var(--text-primary); }
+}
+
+.scan-line {
+  position:absolute; left:0; right:0; height:1px;
+  background:linear-gradient(90deg, transparent, rgba(0,229,255,0.3), transparent);
+  animation: scanDown 3s linear infinite;
+  pointer-events:none; z-index:3; opacity:0.5;
+}
+@keyframes scanDown {
+  0% { top:0; }
+  100% { top:100%; }
+}
+</style>
+</head>
+<body>
+
+<div class="ambient-glow-top"></div>
+<div class="ambient-glow-bottom"></div>
+
+<div class="dashboard">
+
+  <div class="header">
+    <div class="header-brand">
+      <div class="header-logo">⚡</div>
+      <div>
+        <div class="header-title">A2UI Vision Generator</div>
+        <div class="header-subtitle">GenAI HMI · Decision Engine</div>
+      </div>
+    </div>
+    <div class="status-indicator">
+      <div class="status-dot"></div>
+      READY
+    </div>
+  </div>
+
+  <div class="screen-frame" id="screenFrame">
+    <div class="scan-line"></div>
+    <div class="screen-content">
+      <div class="screen-top-bar">
+        <div class="screen-title">📍 智慧座舱 · 决策对比视图</div>
+        <div class="screen-meta">
+          <span>🕐 <span id="timeDisplay">--</span></span>
+          <span>🔍 3 Candidates</span>
+        </div>
+      </div>
+
+      <div class="cards-grid" id="cardsGrid">
+        <!-- Card 1 -->
+        <div class="card card-enter">
+          <div class="card-image" id="cardImage1">
+            <div class="card-image-placeholder">
+              <div class="card-image-bg" id="cardBg1"></div>
+              <span id="cardEmoji1">🍽️</span>
+            </div>
+          </div>
+          <div class="card-body">
+            <div class="card-name" id="cardName1">---</div>
+            <div class="card-rating-row">
+              <div class="card-stars" id="cardStars1"></div>
+              <div class="card-price" id="cardPrice1">---</div>
+            </div>
+            <div class="card-tags">
+              <div class="tag-label">✅ 优势</div>
+              <div class="tag-row" id="cardPros1"></div>
+              <div class="tag-label" style="margin-top:2px;">⚠️ 注意</div>
+              <div class="tag-row" id="cardCons1"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Card 2 -->
+        <div class="card card-enter">
+          <div class="card-image" id="cardImage2">
+            <div class="card-image-placeholder">
+              <div class="card-image-bg" id="cardBg2"></div>
+              <span id="cardEmoji2">🍽️</span>
+            </div>
+          </div>
+          <div class="card-body">
+            <div class="card-name" id="cardName2">---</div>
+            <div class="card-rating-row">
+              <div class="card-stars" id="cardStars2"></div>
+              <div class="card-price" id="cardPrice2">---</div>
+            </div>
+            <div class="card-tags">
+              <div class="tag-label">✅ 优势</div>
+              <div class="tag-row" id="cardPros2"></div>
+              <div class="tag-label" style="margin-top:2px;">⚠️ 注意</div>
+              <div class="tag-row" id="cardCons2"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Card 3 -->
+        <div class="card card-enter">
+          <div class="card-image" id="cardImage3">
+            <div class="card-image-placeholder">
+              <div class="card-image-bg" id="cardBg3"></div>
+              <span id="cardEmoji3">🍽️</span>
+            </div>
+          </div>
+          <div class="card-body">
+            <div class="card-name" id="cardName3">---</div>
+            <div class="card-rating-row">
+              <div class="card-stars" id="cardStars3"></div>
+              <div class="card-price" id="cardPrice3">---</div>
+            </div>
+            <div class="card-tags">
+              <div class="tag-label">✅ 优势</div>
+              <div class="tag-row" id="cardPros3"></div>
+              <div class="tag-label" style="margin-top:2px;">⚠️ 注意</div>
+              <div class="tag-row" id="cardCons3"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="control-bar">
+    <div class="query-display">
+      <div class="query-icon">🎤</div>
+      <div class="query-text placeholder" id="queryText">点击右侧按钮，生成随机语音指令...</div>
+    </div>
+    <button class="voice-btn" id="voiceBtn" onclick="generateRandomQuery()">
+      <span class="voice-btn-icon">▶</span>
+      生成随机提问
+    </button>
+  </div>
+
+</div>
+
+<script>
+const SCENARIO_DATA = [
+  {
+    query: '帮我找附近适合约会的西餐厅',
+    candidates: [
+      {
+        name: 'The Tenderloin',
+        rating: 4.8,
+        price: '¥880/人',
+        visualBg: 'linear-gradient(135deg, #2d1810, #5c2818, #8b3a24)',
+        emoji: '🥩',
+        pros: ['顶级熟成牛排', '烛光浪漫氛围'],
+        cons: ['需提前3天预约', '人均消费偏高']
+      },
+      {
+        name: 'Bella Vista 高空餐厅',
+        rating: 4.7,
+        price: '¥680/人',
+        visualBg: 'linear-gradient(135deg, #0f1c2e, #1a3050, #253b5e)',
+        emoji: '🌃',
+        pros: ['42楼高空夜景', '米其林二星品质'],
+        cons: ['停车仅有代客泊车', '上菜速度偏慢']
+      },
+      {
+        name: 'Bistro Petit 小馆',
+        rating: 4.4,
+        price: '¥280/人',
+        visualBg: 'linear-gradient(135deg, #2b1e10, #4a3020, #6b4430)',
+        emoji: '🍝',
+        pros: ['私密小众不排队', '性价比极高'],
+        cons: ['无独立包间', '酒单选品较少']
+      }
+    ]
+  },
+  {
+    query: '附近有什么好吃的川菜馆推荐',
+    candidates: [
+      {
+        name: '蜀味轩 精品川菜',
+        rating: 4.6,
+        price: '¥160/人',
+        visualBg: 'linear-gradient(135deg, #3d1010, #6b1a1a, #992525)',
+        emoji: '🌶️',
+        pros: ['正宗重庆师傅掌勺', '水煮鱼一绝'],
+        cons: ['饭点排队超30分钟', '环境偏嘈杂']
+      },
+      {
+        name: '蓉城记忆',
+        rating: 4.5,
+        price: '¥120/人',
+        visualBg: 'linear-gradient(135deg, #2d1510, #5c2820, #8b3b30)',
+        emoji: '🥘',
+        pros: ['人均实惠份量足', '麻辣鲜香层次丰富'],
+        cons: ['附近停车位紧张', '无包厢不可预订']
+      },
+      {
+        name: '锦里·新派川味',
+        rating: 4.3,
+        price: '¥200/人',
+        visualBg: 'linear-gradient(135deg, #1a1020, #302040, #4b3060)',
+        emoji: '🍜',
+        pros: ['环境雅致装修新', '融合创意菜品'],
+        cons: ['传统川味不够地道', '份量偏精致']
+      }
+    ]
+  },
+  {
+    query: '周边评分最高的日料店有哪些',
+    candidates: [
+      {
+        name: '鮨·银座 怀石料理',
+        rating: 4.9,
+        price: '¥1200/人',
+        visualBg: 'linear-gradient(135deg, #101820, #1a2840, #2a3a58)',
+        emoji: '🍣',
+        pros: ['日本空运当季食材', '板前主厨亲制'],
+        cons: ['价格极为昂贵', '必须提前一周预约']
+      },
+      {
+        name: '一幸庵 和风食堂',
+        rating: 4.5,
+        price: '¥260/人',
+        visualBg: 'linear-gradient(135deg, #1a2015, #2d3820, #425030)',
+        emoji: '🍱',
+        pros: ['午市套餐性价比高', '刺身新鲜厚切'],
+        cons: ['晚市上菜偏慢', '环境偏家庭式']
+      },
+      {
+        name: '焰·炉端烧',
+        rating: 4.6,
+        price: '¥450/人',
+        visualBg: 'linear-gradient(135deg, #201510, #382818, #554028)',
+        emoji: '🔥',
+        pros: ['围炉体验仪式感强', '烤物火候精准'],
+        cons: ['油烟味偏重', '靠吧台位置较拥挤']
+      }
+    ]
+  },
+  {
+    query: '帮我推荐停车方便的火锅店',
+    candidates: [
+      {
+        name: '海底捞 旗舰店',
+        rating: 4.5,
+        price: '¥150/人',
+        visualBg: 'linear-gradient(135deg, #1a2018, #2d3828, #405038)',
+        emoji: '🫕',
+        pros: ['自带大型停车场', '服务无可挑剔'],
+        cons: ['高峰等位超1小时', '价格近年持续上涨']
+      },
+      {
+        name: '蜀大侠 传统火锅',
+        rating: 4.4,
+        price: '¥120/人',
+        visualBg: 'linear-gradient(135deg, #2d1010, #501818, #732020)',
+        emoji: '🥢',
+        pros: ['地下车库免费停3h', '牛油锅底醇厚'],
+        cons: ['店内通风一般', '蘸料种类偏少']
+      },
+      {
+        name: '捞王 猪肚鸡火锅',
+        rating: 4.3,
+        price: '¥180/人',
+        visualBg: 'linear-gradient(135deg, #1a1a10, #303020, #484830)',
+        emoji: '🍲',
+        pros: ['地面停车场车位充足', '汤底浓郁滋补'],
+        cons: ['辣锅不够过瘾', '肉类选择偏少']
+      }
+    ]
+  },
+  {
+    query: '找一家安静适合商务宴请的粤菜',
+    candidates: [
+      {
+        name: '利苑酒家',
+        rating: 4.7,
+        price: '¥600/人',
+        visualBg: 'linear-gradient(135deg, #151820, #253040, #384860)',
+        emoji: '🥟',
+        pros: ['包间私密隔音好', '粤菜经典米其林推荐'],
+        cons: ['需提前2天预订包间', '服务费15%偏高']
+      },
+      {
+        name: '翠园 港式茶餐厅',
+        rating: 4.3,
+        price: '¥200/人',
+        visualBg: 'linear-gradient(135deg, #1a2015, #30382a, #485040)',
+        emoji: '🍵',
+        pros: ['点心精致选择多', '人均适中不超预算'],
+        cons: ['大厅较嘈杂不宜商谈', '无专用商务包间']
+      },
+      {
+        name: '御宝轩',
+        rating: 4.8,
+        price: '¥750/人',
+        visualBg: 'linear-gradient(135deg, #101520, #1a2538, #283550)',
+        emoji: '🦞',
+        pros: ['黑珍珠三钻水准', '独立茶室可会客'],
+        cons: ['价格顶级偏高', '周末一桌难求']
+      }
+    ]
+  },
+  {
+    query: '想吃烤肉附近有什么推荐',
+    candidates: [
+      {
+        name: '牛角 日本烧肉',
+        rating: 4.6,
+        price: '¥280/人',
+        visualBg: 'linear-gradient(135deg, #1a1510, #302818, #4a3c20)',
+        emoji: '🥓',
+        pros: ['和牛品质稳定', '排烟系统优秀'],
+        cons: ['周末不可用团购券', '座位间距偏小']
+      },
+      {
+        name: '姜虎东白丁烤肉',
+        rating: 4.4,
+        price: '¥180/人',
+        visualBg: 'linear-gradient(135deg, #201510, #382518, #553820)',
+        emoji: '🇰🇷',
+        pros: ['韩式蘸料风味地道', '性价比很高'],
+        cons: ['油烟味残留较重', '服务响应偏慢']
+      },
+      {
+        name: '老干杯 和牛专门店',
+        rating: 4.7,
+        price: '¥500/人',
+        visualBg: 'linear-gradient(135deg, #151020, #251838, #382550)',
+        emoji: '🥩',
+        pros: ['澳洲M9+和牛直供', '专人帮烤体验好'],
+        cons: ['价格门槛较高', '需提前1天订位']
+      }
+    ]
+  }
+];
+
+const BG_GRADIENTS = [
+  'linear-gradient(135deg, #1a1510, #302818, #4a3c20)',
+  'linear-gradient(135deg, #101820, #1a2840, #2a3a58)',
+  'linear-gradient(135deg, #151020, #251838, #382550)',
+  'linear-gradient(135deg, #1a2015, #2d3820, #425030)',
+  'linear-gradient(135deg, #201510, #382518, #553820)',
+  'linear-gradient(135deg, #0f1c2e, #1a3050, #253b5e)',
+];
+
+function renderStars(rating) {
+  const full = Math.floor(rating);
+  const hasHalf = rating - full >= 0.3;
+  let html = '';
+  for (let i = 0; i < 5; i++) {
+    if (i < full) html += '<span class="star">★</span>';
+    else if (i === full && hasHalf) html += '<span class="star">★</span>';
+    else html += '<span class="star-empty">★</span>';
+  }
+  return html + ` <span style="font-size:12px;color:var(--star-gold);margin-left:2px;">${rating}</span>`;
+}
+
+function renderTags(tags, cls) {
+  return tags.map(t => `<span class="tag ${cls}">${t}</span>`).join('');
+}
+
+let currentScenarioIndex = -1;
+
+function updateCards(scenario) {
+  const cards = document.getElementById('cardsGrid');
+  cards.querySelectorAll('.card').forEach(c => c.classList.remove('card-enter'));
+  void cards.offsetWidth;
+  cards.querySelectorAll('.card').forEach(c => c.classList.add('card-enter'));
+
+  scenario.candidates.forEach((c, i) => {
+    const idx = i + 1;
+    document.getElementById('cardBg'+idx).style.background = c.visualBg;
+    document.getElementById('cardEmoji'+idx).textContent = c.emoji;
+    document.getElementById('cardName'+idx).textContent = c.name;
+    document.getElementById('cardStars'+idx).innerHTML = renderStars(c.rating);
+    document.getElementById('cardPrice'+idx).textContent = c.price;
+    document.getElementById('cardPros'+idx).innerHTML = renderTags(c.pros, 'tag-pro');
+    document.getElementById('cardCons'+idx).innerHTML = renderTags(c.cons, 'tag-con');
+  });
+}
+
+function generateRandomQuery() {
+  let idx;
+  do { idx = Math.floor(Math.random() * SCENARIO_DATA.length); }
+  while (idx === currentScenarioIndex && SCENARIO_DATA.length > 1);
+  currentScenarioIndex = idx;
+
+  const scenario = SCENARIO_DATA[idx];
+  const queryEl = document.getElementById('queryText');
+  queryEl.textContent = scenario.query;
+  queryEl.classList.remove('placeholder');
+  queryEl.classList.add('query-flash');
+  setTimeout(() => queryEl.classList.remove('query-flash'), 600);
+
+  const btn = document.getElementById('voiceBtn');
+  btn.style.pointerEvents = 'none';
+  btn.style.opacity = '0.6';
+
+  setTimeout(() => {
+    updateCards(scenario);
+    btn.style.pointerEvents = 'auto';
+    btn.style.opacity = '1';
+  }, 300);
+}
+
+function updateTime() {
+  const now = new Date();
+  document.getElementById('timeDisplay').textContent =
+    now.toLocaleTimeString('zh-CN', { hour:'2-digit', minute:'2-digit' });
+}
+
+updateTime();
+setInterval(updateTime, 30000);
+
+window.addEventListener('load', () => {
+  const initScenario = SCENARIO_DATA[0];
+  updateCards(initScenario);
+});
+</script>
+
+</body>
+</html>
